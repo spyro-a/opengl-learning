@@ -21,7 +21,7 @@ float triangle_vertices[] = {
 int main() {
     engine_t engine;
     engine.initialize();
-    engine.set_wireframe_mode(false);
+    engine.set_wireframe_mode(true);
     engine.run();
     
     /*
