@@ -49,8 +49,12 @@ shader_t::shader_t(const char* vertex_path, const char* fragment_path) {
     
 }
 
-void shader_t::use() {
+void shader_t::bind() {
     glUseProgram(shader_id);
+}
+
+void shader_t::unbind() {
+    glUseProgram(0);
 }
 
 void shader_t::set_bool(const std::string& name, bool value) const {

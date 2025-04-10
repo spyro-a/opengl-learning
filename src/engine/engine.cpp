@@ -4,6 +4,10 @@
 
 #include <utils/utils.hpp>
 
+void engine_t::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    glViewport(0, 0, width, height);
+}
+
 engine_t::engine_t(int width, int height, const std::string& title) {
     window.set_width(width);
     window.set_height(height);
@@ -51,15 +55,16 @@ void engine_t::initialize() {
 
     // compile shaders
     shader = shader_t("shaders/shader.vert", "shaders/shader.frag");
+    texture = texture_t("res/house.png");
 }
 
 void engine_t::run() {
     float vertices[] = {
         // positions          // colors
-         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f, // top right
-         0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f, // top left
+         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 1.0f, // top right
+         0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f, // top left
     };
 
     unsigned int indices[] = {
@@ -69,6 +74,7 @@ void engine_t::run() {
 
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
+
     glGenBuffers(1, &VBO);
     glGenBuffers(1, &EBO);
 
@@ -83,14 +89,19 @@ void engine_t::run() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    // set the vertex attribute pointers
     // params: index/location, size, type, normalized (only for integer params), stride (1 vertex), ptr offset (?)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+
+    // set the vertex attribute pointers
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
     // colors
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    // texture coordinates
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     // unbind the VBO (the EBO is stored in the VAO state)
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -103,7 +114,7 @@ void engine_t::run() {
         glClearColor(0.3f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.use();
+        shader.bind();
 
         if (wireframe_mode)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -112,6 +123,7 @@ void engine_t::run() {
 
         // bind the VAO and draw the triangles to form a rectangle
         glBindVertexArray(VAO);
+        glBindTexture(GL_TEXTURE_2D, texture.get_texture_id());
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window.get_window());

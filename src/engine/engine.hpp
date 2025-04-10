@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <engine/shader.hpp>
+#include <engine/texture.hpp>
 
 #include <window/window.hpp>
 
@@ -12,11 +13,10 @@ private:
     window_t window;
 
     shader_t shader;
+    texture_t texture;
 
     // window resize callback
-    static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-        glViewport(0, 0, width, height);
-    }
+    static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 
 private:
     bool wireframe_mode = false;
@@ -30,7 +30,4 @@ public:
     void destroy();
 
     void process_input(GLFWwindow* window);
-
-    // setters & getters
-    inline void set_wireframe_mode(bool mode) { wireframe_mode = mode; }
 };
