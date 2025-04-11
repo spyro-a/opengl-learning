@@ -22,7 +22,7 @@ private:
     bool wireframe_mode = false;
 
 public:
-    engine_t() = default;
+    engine_t();
     engine_t(int width, int height, const std::string& title);
 
     void initialize();

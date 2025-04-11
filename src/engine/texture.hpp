@@ -5,11 +5,19 @@
 class texture_t {
 private:
     unsigned int texture_id;
-    int width, height, nr_channels;
+    int width, height, channels;
 
 public:
     texture_t() = default;
     texture_t(const std::string& path);
 
-    inline unsigned int get_texture_id() const { return texture_id; }
+    void bind() const;
+    void unbind() const;
+
+    // getters
+    inline unsigned int get_id() const { return texture_id; }
+
+    inline int get_width() const { return width; }
+    inline int get_height() const { return height; }
+    inline int get_channels() const { return channels; }
 };

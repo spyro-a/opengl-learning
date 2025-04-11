@@ -9,8 +9,8 @@
 
 texture_t::texture_t(const std::string& path) {
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(path.c_str(), &width, &height, &nr_channels, 0);
-
+    unsigned char* data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+    
     if (data) {
         glGenTextures(1, &texture_id);
         glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -22,14 +22,14 @@ texture_t::texture_t(const std::string& path) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         GLenum pixel_format;
-        if (nr_channels == 1) {
+        if (channels == 1) {
             pixel_format = GL_RED;
-        } else if (nr_channels == 3) {
+        } else if (channels == 3) {
             pixel_format = GL_RGB;
-        } else if (nr_channels == 4) {
+        } else if (channels == 4) {
             pixel_format = GL_RGBA;
         } else {
-            std::cerr << "unsupported number of channels: " << nr_channels << std::endl;
+            std::cerr << "unsupported number of channels: " << channels << std::endl;
             stbi_image_free(data);
             return;
         }
@@ -39,7 +39,17 @@ texture_t::texture_t(const std::string& path) {
         glGenerateMipmap(GL_TEXTURE_2D);
 
         stbi_image_free(data);
+
+        std::cout << "[" << __FILE_NAME__ << "]: " << "loaded texture \'" << path << "\' (" << width << "x" << height << ")" << std::endl;
     } else {
         std::cerr << "failed to load texture: " << path << std::endl;
     }
+}
+
+void texture_t::bind() const{
+    glBindTexture(GL_TEXTURE_2D, texture_id);
+}
+
+void texture_t::unbind() const{
+    glBindTexture(GL_TEXTURE_2D, 0);
 }

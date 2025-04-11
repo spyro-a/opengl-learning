@@ -1,5 +1,7 @@
 #include <engine/shader.hpp>
 
+#include <glm/gtc/type_ptr.hpp>
+
 shader_t::shader_t(const char* vertex_path, const char* fragment_path) {
     std::string vertex_code = utils::read_file(vertex_path);
     std::string fragment_code = utils::read_file(fragment_path);
@@ -67,4 +69,8 @@ void shader_t::set_int(const std::string& name, int value) const {
 
 void shader_t::set_float(const std::string& name, float value) const {
     glUniform1f(glGetUniformLocation(shader_id, name.c_str()), value);
+}
+
+void shader_t::set_mat4(const std::string& name, const glm::mat4& value) const {
+    glUniformMatrix4fv(glGetUniformLocation(shader_id, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }

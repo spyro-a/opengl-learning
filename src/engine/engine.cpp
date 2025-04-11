@@ -1,4 +1,9 @@
+#include "glm/fwd.hpp"
 #include <iostream>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <engine/engine.hpp>
 
@@ -8,7 +13,11 @@ void engine_t::framebuffer_size_callback(GLFWwindow* window, int width, int heig
     glViewport(0, 0, width, height);
 }
 
-engine_t::engine_t(int width, int height, const std::string& title) {
+engine_t::engine_t() {
+
+}
+
+engine_t::engine_t(int width, int height, const std::string& title) : engine_t() {
     window.set_width(width);
     window.set_height(height);
     window.set_title(title);
@@ -55,16 +64,16 @@ void engine_t::initialize() {
 
     // compile shaders
     shader = shader_t("shaders/shader.vert", "shaders/shader.frag");
-    texture = texture_t("res/house.png");
+    texture = texture_t("res/landscape.jpg");
 }
 
 void engine_t::run() {
     float vertices[] = {
-        // positions          // colors
-         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 1.0f, // top right
-         0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   0.0f, 1.0f, // top left
+        // positions          // colors           // uv coords
+         0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 1.0f,  // top right
+         0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   1.0f, 0.0f, // bottom right
+        -0.5f, -0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 0.0f, // bottom left
+        -0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 1.0f,   0.0f, 1.0f, // top left
     };
 
     unsigned int indices[] = {
@@ -103,7 +112,7 @@ void engine_t::run() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
     glEnableVertexAttribArray(2);
 
-    // unbind the VBO (the EBO is stored in the VAO state)
+    // unbind the objects
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
@@ -114,16 +123,28 @@ void engine_t::run() {
         glClearColor(0.3f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        shader.bind();
-
         if (wireframe_mode)
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         else
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-        // bind the VAO and draw the triangles to form a rectangle
+        shader.bind();
+        texture.bind();
+
+        // ensure aspect ratio is maintained
+        int vp_width, vp_height;
+        glfwGetFramebufferSize(window.get_window(), &vp_width, &vp_height);
+        glm::mat4 projection = glm::ortho(
+            -1.0f * ((float)vp_width / vp_height),
+            1.0f * ((float)vp_width / vp_height),
+            -1.0f,
+            1.0f,
+            -1.0f,
+            1.0f
+        );
+        shader.set_mat4("projection", projection);
+        
         glBindVertexArray(VAO);
-        glBindTexture(GL_TEXTURE_2D, texture.get_texture_id());
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window.get_window());
@@ -145,6 +166,11 @@ void engine_t::destroy() {
 void engine_t::process_input(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+
+    #ifdef __APPLE__
         system("clear");
+    #elif defined(__WIN32__)
+        system("cls");
+    #endif
     }
 }
