@@ -22,13 +22,13 @@ texture_t::texture_t(const std::string& path) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         GLenum pixel_format;
-        if (channels == 1) {
+        if (channels == 1)
             pixel_format = GL_RED;
-        } else if (channels == 3) {
+        else if (channels == 3)
             pixel_format = GL_RGB;
-        } else if (channels == 4) {
+        else if (channels == 4)
             pixel_format = GL_RGBA;
-        } else {
+        else {
             std::cerr << "unsupported number of channels: " << channels << std::endl;
             stbi_image_free(data);
             return;

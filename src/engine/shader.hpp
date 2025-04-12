@@ -8,14 +8,15 @@
 #include <utils/utils.hpp>
 
 class shader_t {
-public:
+private:
     unsigned int shader_id;
 
+public:
     shader_t() = default;
     shader_t(const char* vertex_path, const char* fragment_path);
 
-    void bind();
-    void unbind();
+    void bind() const;
+    void unbind() const;
 
     // getters
     inline unsigned int get_id() const { return shader_id; }

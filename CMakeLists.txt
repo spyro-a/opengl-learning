@@ -5,6 +5,7 @@ SET(CMAKE_CXX_STANDARD 14)
 
 FILE(GLOB SOURCES
     src/engine/*.cpp
+    src/menu/*.cpp
     src/*.cpp
 )
 
@@ -24,4 +25,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     OpenGL::GL
     glfw
     glad
+    imgui
 )

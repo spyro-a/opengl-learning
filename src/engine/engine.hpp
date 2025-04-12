@@ -6,11 +6,14 @@
 #include <engine/shader.hpp>
 #include <engine/texture.hpp>
 
+#include <menu/menu.hpp>
+
 #include <window/window.hpp>
 
 class engine_t {
 private:
     window_t window;
+    menu_t menu;
 
     shader_t shader;
     texture_t texture;

@@ -48,14 +48,13 @@ shader_t::shader_t(const char* vertex_path, const char* fragment_path) {
 
     glDeleteShader(vertex);
     glDeleteShader(fragment);
-    
 }
 
-void shader_t::bind() {
+void shader_t::bind() const {
     glUseProgram(shader_id);
 }
 
-void shader_t::unbind() {
+void shader_t::unbind() const {
     glUseProgram(0);
 }
 

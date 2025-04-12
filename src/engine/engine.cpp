@@ -1,7 +1,6 @@
 #include <iostream>
 
 #include <glad/glad.h>
-
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -67,7 +66,12 @@ void engine_t::initialize() {
 
     // compile shaders
     shader = shader_t("shaders/shader.vert", "shaders/shader.frag");
+
+    // load textures
     texture = texture_t("res/gradient.png");
+
+    // initialize menu
+    menu.initialize(window.get_window());
 }
 
 void engine_t::run() {
@@ -117,9 +121,7 @@ void engine_t::run() {
 
     unsigned int VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
-
     glGenBuffers(1, &VBO);
-    // glGenBuffers(1, &EBO);
 
     // bind the VAO
     glBindVertexArray(VAO);
@@ -127,12 +129,6 @@ void engine_t::run() {
     // bind and fill the VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    // bind and fill the EBO
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-    // params: index/location, size, type, normalized (only for integer params), stride (1 vertex), ptr offset (?)
 
     // set the vertex attribute pointers
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
@@ -151,6 +147,14 @@ void engine_t::run() {
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection;
 
+    glm::vec3 camera_position = glm::vec3(0.f, 0.f, 3.0f);
+    glm::vec3 camera_target = glm::vec3(0.f, 0.f, 0.f);
+    glm::vec3 camera_direction = glm::normalize(camera_position - camera_target);
+
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
+    glm::vec3 cameraUp = glm::cross(camera_direction, camera_right);
+
     view = glm::translate(view, glm::vec3(0.f, 0.f, -3.0f));
 
     // render loop
@@ -168,28 +172,35 @@ void engine_t::run() {
         shader.bind();
         texture.bind();
 
-        model = glm::rotate(model, 0.05f, glm::vec3(1.f, 0.0f, 1.0f));
+        model = glm::rotate(model, 0.0f, glm::vec3(1.f, 0.0f, 1.0f));
         projection = glm::perspective(glm::radians(45.f), (float)window.get_width() / (float)window.get_height(), 0.1f, 100.f);
 
+        glm::mat4 view = glm::mat4(1.0f);
+        // float radius = 5.0f;
+        menu.cam_x = static_cast<float>(sin(glfwGetTime()) * menu.radius);
+        menu.cam_z = static_cast<float>(cos(glfwGetTime()) * menu.radius);
+        view = glm::lookAt(glm::vec3(menu.cam_x, 0.0f, menu.cam_z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        
+        glBindVertexArray(VAO);
+        
         shader.set_mat4("model", model);
         shader.set_mat4("view", view);
         shader.set_mat4("projection", projection);
         
-        glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        menu.render();
 
         glfwSwapBuffers(window.get_window());
         glfwPollEvents();
     }
 
-    // cleanup: delete the buffers and arrays
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    // glDeleteBuffers(1, &EBO);
 }
 
 void engine_t::destroy() {
-    glDeleteProgram(shader.shader_id);
+    glDeleteProgram(shader.get_id());
     glfwDestroyWindow(window.get_window());
     glfwTerminate();
 }
@@ -198,10 +209,13 @@ void engine_t::process_input(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
 
-    #ifdef __APPLE__
+    #if defined(__linux__) || defined(__APPLE__)
         system("clear");
     #elif defined(__WIN32__)
         system("cls");
     #endif
+
+    } else if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
+        wireframe_mode = !wireframe_mode;
     }
 }
