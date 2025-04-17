@@ -57,6 +57,7 @@ void engine_t::initialize() {
     }
 
     glEnable(GL_DEPTH_TEST);
+    glfwSetInputMode(window.get_window(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // make adjustments for retina displays
     int vp_width, vp_height;
@@ -71,7 +72,7 @@ void engine_t::initialize() {
     texture = texture_t("res/gradient.png");
 
     // initialize menu
-    menu.initialize(window.get_window());
+    menu.initialize(this);
 }
 
 void engine_t::run() {
@@ -119,11 +120,11 @@ void engine_t::run() {
         -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
     };
 
-    unsigned int VBO, VAO, EBO;
+    // generate objects
+    unsigned int VBO, VAO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
 
-    // bind the VAO
     glBindVertexArray(VAO);
 
     // bind and fill the VBO
@@ -142,24 +143,21 @@ void engine_t::run() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
-    // SRT
-    glm::mat4 model = glm::mat4(1.0f);
+    // SRT, MVP
     glm::mat4 view = glm::mat4(1.0f);
     glm::mat4 projection;
 
-    glm::vec3 camera_position = glm::vec3(0.f, 0.f, 3.0f);
-    glm::vec3 camera_target = glm::vec3(0.f, 0.f, 0.f);
-    glm::vec3 camera_direction = glm::normalize(camera_position - camera_target);
-
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-    glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
-    glm::vec3 cameraUp = glm::cross(camera_direction, camera_right);
-
-    view = glm::translate(view, glm::vec3(0.f, 0.f, -3.0f));
-
     // render loop
     while (!glfwWindowShouldClose(window.get_window())) {
+        float current_frame_time = glfwGetTime();
+        delta_time = current_frame_time - last_frame_time;
+        last_frame_time = current_frame_time;
+
         process_input(window.get_window());
+
+        camera.direction.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
+        camera.direction.y = sin(glm::radians(camera.pitch));
+        camera.direction.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
 
         glClearColor(0.3f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -172,24 +170,22 @@ void engine_t::run() {
         shader.bind();
         texture.bind();
 
-        model = glm::rotate(model, 0.0f, glm::vec3(1.f, 0.0f, 1.0f));
-        projection = glm::perspective(glm::radians(45.f), (float)window.get_width() / (float)window.get_height(), 0.1f, 100.f);
+        camera.direction.x = cos(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
+        camera.direction.y = sin(glm::radians(camera.pitch));
+        camera.direction.z = sin(glm::radians(camera.yaw)) * cos(glm::radians(camera.pitch));
 
-        glm::mat4 view = glm::mat4(1.0f);
-        // float radius = 5.0f;
-        menu.cam_x = static_cast<float>(sin(glfwGetTime()) * menu.radius);
-        menu.cam_z = static_cast<float>(cos(glfwGetTime()) * menu.radius);
-        view = glm::lookAt(glm::vec3(menu.cam_x, 0.0f, menu.cam_z), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        projection = glm::perspective(glm::radians(camera.field_of_view), (float)window.get_width() / (float)window.get_height(), 0.1f, 100.f);
+        view = glm::lookAt(camera.position, camera.position + camera.direction, CAMERA_UP);
         
         glBindVertexArray(VAO);
         
-        shader.set_mat4("model", model);
         shader.set_mat4("view", view);
         shader.set_mat4("projection", projection);
         
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
-        menu.render();
+        if (menu.is_showing())
+            menu.render();
 
         glfwSwapBuffers(window.get_window());
         glfwPollEvents();
@@ -200,6 +196,8 @@ void engine_t::run() {
 }
 
 void engine_t::destroy() {
+    menu.destroy();
+
     glDeleteProgram(shader.get_id());
     glfwDestroyWindow(window.get_window());
     glfwTerminate();
@@ -218,4 +216,23 @@ void engine_t::process_input(GLFWwindow* window) {
     } else if (glfwGetKey(window, GLFW_KEY_X) == GLFW_PRESS) {
         wireframe_mode = !wireframe_mode;
     }
+
+    if (glfwGetKey(window, GLFW_KEY_F2) == GLFW_PRESS) {
+        menu.toggle();
+        std::cout << menu.is_showing() << std::endl;
+        glfwSetInputMode(window, GLFW_CURSOR, menu.is_showing() ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        camera.position += (delta_time * camera.speed) * CAMERA_FRONT;
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+        camera.position -= (delta_time * camera.speed) * CAMERA_FRONT;
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        camera.position -= glm::normalize(glm::cross(CAMERA_FRONT, CAMERA_UP)) * (delta_time * camera.speed);
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+        camera.position += glm::normalize(glm::cross(CAMERA_FRONT, CAMERA_UP)) * (delta_time * camera.speed);
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        camera.position += CAMERA_UP * (delta_time * camera.speed);
+    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+        camera.position -= CAMERA_UP * (delta_time * camera.speed);
 }
