@@ -1,4 +1,6 @@
 .cache
 build
 
+**/.DS_Store
+
 imgui.ini
